@@ -106,7 +106,7 @@ void vtkSMStringVectorProperty::ReadFrom(const vtkSMMessage* msg, int offset)
     {
     values[cc] = variant->txt(cc).c_str();
     }
-  this->SetElements(num_elems, values);
+  this->SetElements(values, num_elems);
   delete[] values;
 }
 
@@ -184,7 +184,7 @@ int vtkSMStringVectorProperty::SetElements(vtkStringList* list)
 }
 
 //---------------------------------------------------------------------------
-int vtkSMStringVectorProperty::SetElements(unsigned int count, const char* values[])
+int vtkSMStringVectorProperty::SetElements(const char* values[], unsigned int count)
 {
   vtkStdString* std_values = new vtkStdString[count+1];
   for (unsigned int cc=0; cc < count; cc++)
@@ -192,6 +192,19 @@ int vtkSMStringVectorProperty::SetElements(unsigned int count, const char* value
     std_values[cc] = values[cc]? values[cc] : "";
     }
   int ret_val = this->Internals->SetElements(std_values, count);
+  delete[] std_values;
+  return ret_val;
+}
+
+//---------------------------------------------------------------------------
+int vtkSMStringVectorProperty::SetUncheckedElements(const char* values[], unsigned int count)
+{
+  vtkStdString* std_values = new vtkStdString[count+1];
+  for (unsigned int cc=0; cc < count; cc++)
+    {
+    std_values[cc] = values[cc]? values[cc] : "";
+    }
+  int ret_val = this->Internals->SetUncheckedElements(std_values, count);
   delete[] std_values;
   return ret_val;
 }
@@ -288,6 +301,11 @@ int vtkSMStringVectorProperty::ReadXMLAttributes(vtkSMProxy* proxy,
 const char* vtkSMStringVectorProperty::GetDefaultValue(int idx)
 {
   return this->Internals->GetDefaultValue(idx).c_str();
+}
+
+void vtkSMStringVectorProperty::ClearUncheckedElements()
+{
+  this->Internals->ClearUncheckedElements();
 }
 
 //---------------------------------------------------------------------------

@@ -123,6 +123,12 @@ int vtkSMIntVectorProperty::GetDefaultValue(int idx)
 }
 
 //---------------------------------------------------------------------------
+void vtkSMIntVectorProperty::ClearUncheckedElements()
+{
+  this->Internals->ClearUncheckedElements();
+}
+
+//---------------------------------------------------------------------------
 int *vtkSMIntVectorProperty::GetElements()
 {
   return this->Internals->GetElements();
@@ -183,6 +189,17 @@ int vtkSMIntVectorProperty::SetElements(const int* values, unsigned int numElems
   return this->Internals->SetElements(values, numElems);
 }
 
+//---------------------------------------------------------------------------
+int vtkSMIntVectorProperty::SetUncheckedElements(const int* values)
+{
+  return this->Internals->SetUncheckedElements(values);
+}
+
+//---------------------------------------------------------------------------
+int vtkSMIntVectorProperty::SetUncheckedElements(const int* values, unsigned int numValues)
+{
+  return this->Internals->SetUncheckedElements(values, numValues);
+}
 
 //---------------------------------------------------------------------------
 int vtkSMIntVectorProperty::ReadXMLAttributes(vtkSMProxy* parent,
