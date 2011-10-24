@@ -18,6 +18,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVServerInformation.h"
+#include "vtkPVMultiClientsInformation.h"
 #include "vtkProcessModule.h"
 #include "vtkSMMessage.h"
 #include "vtkPVSessionCore.h"
@@ -29,6 +30,7 @@
 //----------------------------------------------------------------------------
 vtkPVSessionBase::vtkPVSessionBase()
 {
+  this->ProcessingRemoteNotification = false;
   this->SessionCore = vtkPVSessionCore::New();
 
   // initialize local process information.
@@ -156,13 +158,25 @@ const vtkClientServerStream& vtkPVSessionBase::GetLastResult(
 }
 
 //----------------------------------------------------------------------------
-void vtkPVSessionBase::DeleteSIObject(vtkSMMessage* msg)
+void vtkPVSessionBase::UnRegisterSIObject(vtkSMMessage* msg)
 {
   this->Activate();
 
   // This class does not handle remote sessions, so all messages are directly
   // processes locally.
-  this->SessionCore->DeleteSIObject(msg);
+  this->SessionCore->UnRegisterSIObject(msg);
+
+  this->DeActivate();
+}
+
+//----------------------------------------------------------------------------
+void vtkPVSessionBase::RegisterSIObject(vtkSMMessage* msg)
+{
+  this->Activate();
+
+  // This class does not handle remote sessions, so all messages are directly
+  // processes locally.
+  this->SessionCore->RegisterSIObject(msg);
 
   this->DeActivate();
 }
@@ -224,9 +238,18 @@ vtkObject* vtkPVSessionBase::GetRemoteObject(vtkTypeUInt32 globalid)
 }
 
 //----------------------------------------------------------------------------
-void vtkPVSessionBase::RegisterRemoteObject(vtkTypeUInt32 gid, vtkObject* obj)
+void vtkPVSessionBase::RegisterRemoteObject(vtkTypeUInt32 gid,
+                                            vtkTypeUInt32 location, vtkObject* obj)
 {
   this->SessionCore->RegisterRemoteObject(gid, obj);
+
+  // Also tell the remote resources that it is used
+  vtkSMMessage registerMsg;
+  registerMsg.set_global_id(gid);
+  registerMsg.set_location(location);
+  this->RegisterSIObject(&registerMsg);
+
+  this->InvokeEvent(vtkPVSessionBase::RegisterRemoteObjectEvent, &gid);
 }
 
 //----------------------------------------------------------------------------
@@ -238,7 +261,9 @@ void vtkPVSessionBase::UnRegisterRemoteObject(vtkTypeUInt32 gid, vtkTypeUInt32 l
   vtkSMMessage deleteMsg;
   deleteMsg.set_global_id(gid);
   deleteMsg.set_location(location);
-  this->DeleteSIObject(&deleteMsg);
+  this->UnRegisterSIObject(&deleteMsg);
+
+  this->InvokeEvent(vtkPVSessionBase::UnRegisterRemoteObjectEvent, &gid);
 }
 
 //----------------------------------------------------------------------------
@@ -257,4 +282,44 @@ vtkMPIMToNSocketConnection* vtkPVSessionBase::GetMPIMToNSocketConnection()
 void vtkPVSessionBase::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+}
+//----------------------------------------------------------------------------
+vtkTypeUInt32 vtkPVSessionBase::GetNextGlobalUniqueIdentifier()
+{
+  vtkTypeUInt32 id = this->SessionCore->GetNextGlobalUniqueIdentifier();
+  return id;
+}
+
+//----------------------------------------------------------------------------
+vtkTypeUInt32 vtkPVSessionBase::GetNextChunkGlobalUniqueIdentifier(vtkTypeUInt32 chunkSize)
+{
+  vtkClientServerStream stream;
+  stream << vtkClientServerStream::Invoke
+      << vtkClientServerID(1) // ID for the vtkSMSessionCore helper.
+      << "GetNextGlobalIdChunk"
+      << chunkSize
+      << vtkClientServerStream::End;
+  this->ExecuteStream(vtkPVSession::DATA_SERVER_ROOT, stream);
+
+  // Extract the first id of the new chunk
+  vtkTypeUInt32 id;
+  this->GetLastResult(vtkPVSession::DATA_SERVER_ROOT).GetArgument(0,0, &id);
+  return id;
+}
+//----------------------------------------------------------------------------
+bool vtkPVSessionBase::StartProcessingRemoteNotification()
+{
+  bool tmp = this->ProcessingRemoteNotification;
+  this->ProcessingRemoteNotification = true;
+  return tmp;
+}
+//----------------------------------------------------------------------------
+void vtkPVSessionBase::StopProcessingRemoteNotification(bool previousValue)
+{
+  this->ProcessingRemoteNotification = previousValue;
+}
+//----------------------------------------------------------------------------
+bool vtkPVSessionBase::IsProcessingRemoteNotification()
+{
+  return this->ProcessingRemoteNotification;
 }

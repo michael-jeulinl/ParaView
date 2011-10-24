@@ -246,6 +246,100 @@ ENDIF()
 # Make these tests use reverse connection.
 SET (CutMulti_REVERSE_CONNECT TRUE)
 
+##########################################################
+# List of known incompatible tests for Collaboration
+#
+#   Contains Undo/Redo actions:
+#     - Clip, GlobalProperties, UndoRedo, UndoRedo[1-8]
+#
+#   Contains Plugin Loading actions:
+#     - LoadPlugins, NiftiReaderWriterPlugin, EyeDomeLighting, H5PartReaderPlugin
+#
+#   Does not work in CS or CRS mode
+#     - ViewSettingsDialog, ColorEditor3
+#
+#   Does not work because a disconnection is involved
+#     - ExportX3dPOVVRML
+#
+#   Don't want to support for now
+#     - ComparativeVisPanel
+#     - LoadSaveStateAnimation: The time get reset by collab
+#
+##########################################################
+
+# List of test Enable for collaboration
+set (AnimatePipelineTime_ENABLE_COLLAB TRUE)
+set (3DWidgetInCustomFilter_ENABLE_COLLAB TRUE)
+set (CalcParens_ENABLE_COLLAB TRUE)
+set (Calculator_ENABLE_COLLAB TRUE)
+set (CameraLink_ENABLE_COLLAB TRUE)
+set (ColorEditor1_ENABLE_COLLAB TRUE)
+set (ColorEditor2_ENABLE_COLLAB TRUE)
+set (ColorEditor4_ENABLE_COLLAB TRUE)
+set (CompositeSurfaceSelection_ENABLE_COLLAB TRUE)
+set (Contour_ENABLE_COLLAB TRUE)
+set (ContourRange_ENABLE_COLLAB TRUE)
+set (CustomFilter_ENABLE_COLLAB TRUE)
+set (CustomSourceProbe_ENABLE_COLLAB TRUE)
+set (D3SmallCells_ENABLE_COLLAB TRUE)
+set (DualSphereAnimation_ENABLE_COLLAB TRUE)
+set (EnSight_ENABLE_COLLAB TRUE)
+set (ExodusIIPanel_ENABLE_COLLAB TRUE)
+set (ExodusModeShapes_ENABLE_COLLAB TRUE)
+set (ExodusXML_ENABLE_COLLAB TRUE)
+set (ExTimeseries_ENABLE_COLLAB TRUE)
+set (ExTimeseries2_ENABLE_COLLAB TRUE)
+set (ExtractBlock_ENABLE_COLLAB TRUE)
+set (ExtractLevel_ENABLE_COLLAB TRUE)
+set (FindDataDialog_ENABLE_COLLAB TRUE)
+set (FFTOverTime_ENABLE_COLLAB TRUE)
+set (Flow_ENABLE_COLLAB TRUE)
+set (Flow2_ENABLE_COLLAB TRUE)
+set (Fractal2D_ENABLE_COLLAB TRUE)
+set (GridConnectivity_ENABLE_COLLAB TRUE)
+set (LoadState_ENABLE_COLLAB TRUE)
+set (NormalGlyphs_ENABLE_COLLAB TRUE)
+set (ObjectInspectorSphere_ENABLE_COLLAB TRUE)
+set (OpenSaveData_ENABLE_COLLAB TRUE)
+set (Plot3DReader_ENABLE_COLLAB TRUE)
+set (PlotEdges_ENABLE_COLLAB TRUE)
+set (PlotEdges2_ENABLE_COLLAB TRUE)
+set (PropertyConversion_ENABLE_COLLAB TRUE)
+set (PropertyConversion1_ENABLE_COLLAB TRUE)
+set (PropertyConversion2_ENABLE_COLLAB TRUE)
+set (PropertyLink_ENABLE_COLLAB TRUE)
+set (ReadXMLPolyDataFileSeries_ENABLE_COLLAB TRUE)
+set (RectilinearFractal_ENABLE_COLLAB TRUE)
+set (RepresentationSelector_ENABLE_COLLAB TRUE)
+set (SaveColorMap_ENABLE_COLLAB TRUE)
+set (SaveCSV_ENABLE_COLLAB TRUE)
+set (SelectReader_ENABLE_COLLAB TRUE)
+set (SimpleInteraction_ENABLE_COLLAB TRUE)
+set (Slice_ENABLE_COLLAB TRUE)
+set (SpreadSheet1_ENABLE_COLLAB TRUE)
+set (SpreadSheet2_ENABLE_COLLAB TRUE)
+set (SPTimeseries_ENABLE_COLLAB TRUE)
+set (SpyPlotHistoryReader_ENABLE_COLLAB TRUE)
+set (StreamTracerUpdates_ENABLE_COLLAB TRUE)
+set (TemporalInterpolator_ENABLE_COLLAB TRUE)
+set (TemporalShiftScale_ENABLE_COLLAB TRUE)
+set (Tessellate_ENABLE_COLLAB TRUE)
+set (Threshold_ENABLE_COLLAB TRUE)
+set (UnstructuredOutline_ENABLE_COLLAB TRUE)
+set (VariableSelector_ENABLE_COLLAB TRUE)
+set (VariableSelector1_ENABLE_COLLAB TRUE)
+set (XdmfRead_ENABLE_COLLAB TRUE)
+set (XdmfReadImageData_ENABLE_COLLAB TRUE)
+set (XdmfReadImageDataCollection_ENABLE_COLLAB TRUE)
+set (XdmfReadRectilinearGrid_ENABLE_COLLAB TRUE)
+set (XdmfReadRectilinearGridCollection_ENABLE_COLLAB TRUE)
+set (XdmfReadStructuredGrid_ENABLE_COLLAB TRUE)
+set (XdmfReadStructuredGridCollection_ENABLE_COLLAB TRUE)
+set (XdmfGridAttributes_ENABLE_COLLAB TRUE)
+set (XYChart_ENABLE_COLLAB TRUE)
+set (XYHistogram_ENABLE_COLLAB TRUE)
+set (ZLibXDMF_ENABLE_COLLAB TRUE)
+
 add_client_tests("pv"
   TEST_SCRIPTS ${TESTS_WITHOUT_BASELINES}
   PARALLEL
@@ -271,5 +365,9 @@ IF (PARAVIEW_DATA_ROOT)
   ENDIF (PARAVIEW_CLIENT_RENDER_SERVER_TESTS)
 
 # TODO: remote rendering tests and reverse connect tests.
+
+  add_multi_client_tests("pvcs-collab"
+    BASELINE_DIR ${PARAVIEW_DATA_ROOT}/Baseline
+    TEST_SCRIPTS ${TESTS_WITH_BASELINES})
 
 ENDIF (PARAVIEW_DATA_ROOT)

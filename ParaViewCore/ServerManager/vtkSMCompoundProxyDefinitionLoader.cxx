@@ -35,7 +35,7 @@ vtkSMCompoundProxyDefinitionLoader::~vtkSMCompoundProxyDefinitionLoader()
 }
 
 //---------------------------------------------------------------------------
-vtkPVXMLElement* vtkSMCompoundProxyDefinitionLoader::LocateProxyElement(int id)
+vtkPVXMLElement* vtkSMCompoundProxyDefinitionLoader::LocateProxyElement(vtkTypeUInt32 id)
 {
   if (!this->RootElement)
     {
@@ -53,7 +53,7 @@ vtkPVXMLElement* vtkSMCompoundProxyDefinitionLoader::LocateProxyElement(int id)
     if (currentElement->GetName() &&
       strcmp(currentElement->GetName(), "Proxy") == 0)
       {
-      int currentId;
+      vtkIdType currentId;
       if (!currentElement->GetScalarAttribute("id", &currentId))
         {
         continue;

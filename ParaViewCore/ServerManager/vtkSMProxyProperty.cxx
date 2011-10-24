@@ -37,8 +37,10 @@
 
 #include <assert.h>
 
-vtkStandardNewMacro(vtkSMProxyProperty);
 
+//***************************************************************************
+//                          Internal classes
+//***************************************************************************
 class vtkSMProxyProperty::vtkProxyPointer
 {
 public:
@@ -98,7 +100,7 @@ public:
     return (this->Self == other.Self && this->Value == other.Value);
     }
 };
-
+//***************************************************************************
 struct vtkSMProxyPropertyInternals
 {
   typedef vtkstd::vector<vtkSMProxyProperty::vtkProxyPointer> VectorOfProxies;
@@ -118,7 +120,9 @@ struct vtkSMProxyPropertyInternals
   vtkstd::vector<vtkSMProxy*> UncheckedProxies;
   vtkstd::map<void*, int> ProducerCounts;
 };
-
+//***************************************************************************
+vtkStandardNewMacro(vtkSMProxyProperty);
+bool vtkSMProxyProperty::CreateProxyAllowed = false; // static init
 //---------------------------------------------------------------------------
 vtkSMProxyProperty::vtkSMProxyProperty()
 {
@@ -373,7 +377,8 @@ void vtkSMProxyProperty::WriteTo(vtkSMMessage* message)
 }
 
 //---------------------------------------------------------------------------
-void vtkSMProxyProperty::ReadFrom(const vtkSMMessage* message, int msg_offset)
+void vtkSMProxyProperty::ReadFrom(const vtkSMMessage* message, int msg_offset,
+                                  vtkSMProxyLocator* locator)
 {
   // FIXME this method is REALLY close to its vtkSMInputProperty subClass
   // Please keep them in sync
@@ -416,8 +421,19 @@ void vtkSMProxyProperty::ReadFrom(const vtkSMMessage* message, int msg_offset)
       {
       // Get the proxy from proxy manager
       vtkSMProxyManager* pxm = vtkSMProxyManager::GetProxyManager();
-      vtkSMProxy* proxy = vtkSMProxy::SafeDownCast(
-          pxm->GetSession()->GetRemoteObject(*proxyIdIter));
+
+      vtkSMProxy* proxy;
+      if(locator && vtkSMProxyProperty::CanCreateProxy())
+        {
+        proxy = locator->LocateProxy(*proxyIdIter);
+        }
+      else
+        {
+        proxy =
+            vtkSMProxy::SafeDownCast(
+                pxm->GetSession()->GetRemoteObject(*proxyIdIter));
+        }
+
       if(proxy)
         {
         this->AddProxy(proxy, true);
@@ -665,4 +681,19 @@ int vtkSMProxyProperty::LoadState(vtkPVXMLElement* element,
   this->Modified();
   this->ImmediateUpdate = prevImUpdate;
   return 1;
+}
+//---------------------------------------------------------------------------
+void vtkSMProxyProperty::EnableProxyCreation()
+{
+  vtkSMProxyProperty::CreateProxyAllowed = true;
+}
+//---------------------------------------------------------------------------
+void vtkSMProxyProperty::DisableProxyCreation()
+{
+  vtkSMProxyProperty::CreateProxyAllowed = false;
+}
+//---------------------------------------------------------------------------
+bool vtkSMProxyProperty::CanCreateProxy()
+{
+  return vtkSMProxyProperty::CreateProxyAllowed;
 }

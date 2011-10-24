@@ -33,6 +33,8 @@
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMOutputPort.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMMessage.h"
+#include "vtkSMProxyLocator.h"
 #include "vtkSMStringVectorProperty.h"
 
 #include <vtkstd/string>
@@ -480,6 +482,7 @@ void vtkSMSourceProxy::CreateSelectionProxies()
   this->CreateOutputPorts();
 
   vtkClientServerStream stream;
+  vtkSMMessage selectionProxyMessage;
   vtkSMProxyManager* pxm = this->GetProxyManager();
   unsigned int numOutputPorts = this->GetNumberOfOutputPorts();
   for (unsigned int cc=0; cc < numOutputPorts; cc++)
@@ -503,11 +506,18 @@ void vtkSMSourceProxy::CreateSelectionProxies()
              << cc
              << SIPROXY(esProxy)
              << vtkClientServerStream::End;
+
+      // Add selection proxy information in the state
+      this->State->AddExtension(ProxyState::selection_proxy, esProxy->GetGlobalID());
+      selectionProxyMessage.AddExtension( ProxyState::selection_proxy,
+                                          esProxy->GetGlobalID());
       }
 
     this->PInternals->SelectionProxies.push_back(esProxy);
     }
   this->ExecuteStream(stream);
+  // Push only the selection information
+  this->PushState(&selectionProxyMessage);
   this->SelectionProxiesCreated = true;
 }
 
@@ -606,4 +616,58 @@ void vtkSMSourceProxy::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
   os << indent << "OutputPortsCreated: " << this->OutputPortsCreated << endl;
   os << indent << "ProcessSupport: " << this->ProcessSupport << endl;
+}
+//---------------------------------------------------------------------------
+void vtkSMSourceProxy::LoadState( const vtkSMMessage* message,
+                                  vtkSMProxyLocator* locator )
+{
+  this->Superclass::LoadState(message, locator);
+
+  // Handle selection proxy if any
+  if(!this->SelectionProxiesCreated)
+    {
+    this->CreateVTKObjects(); // Make sure the proxy is created
+    int size = message->ExtensionSize(ProxyState::selection_proxy);
+    if(size > 0)
+      {
+      this->State->ClearExtension(ProxyState::selection_proxy);
+      this->PInternals->SelectionProxies.clear();
+      this->SelectionProxiesCreated = true;
+      vtkClientServerStream stream;
+
+      for(int cc=0; cc < size; cc++)
+        {
+        vtkTypeUInt32 gid = message->GetExtension(ProxyState::selection_proxy, cc);
+        vtkSMSourceProxy* selectionProxy =
+            vtkSMSourceProxy::SafeDownCast(locator->LocateProxy(gid));
+        if(!selectionProxy)
+          {
+          vtkErrorMacro("State not find for a selection proxy with ID " << gid);
+          }
+        else
+          {
+          selectionProxy->SetGlobalID(gid);
+          selectionProxy->SetLocation(this->Location);
+          // since we don't want the ExtractSelection proxy to further create
+          // extract selection proxies even by accident :).
+          selectionProxy->SelectionProxiesCreated = true;
+          selectionProxy->UpdateVTKObjects();
+
+          stream << vtkClientServerStream::Invoke
+                 << SIPROXY(this)
+                 << "SetupSelectionProxy"
+                 << cc
+                 << SIPROXY(selectionProxy)
+                 << vtkClientServerStream::End;
+
+          // Add selection proxy information in the state
+          this->State->AddExtension(ProxyState::selection_proxy, selectionProxy->GetGlobalID());
+
+          // Keep a reference internally
+          this->PInternals->SelectionProxies.push_back(selectionProxy);
+          }
+        }
+      this->ExecuteStream(stream);
+      }
+    }
 }
