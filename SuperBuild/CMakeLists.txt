@@ -407,6 +407,9 @@ if(NOT WIN32)
   list(APPEND ParaView_dependencies FFMPEG)
 endif()
 
+include(External_VisTrails)
+list(APPEND ParaView_dependencies VisTrails)
+
 option(ParaView_BUILD_DOCUMENTATION "Build ParaView Documentation" FALSE)
 set(DOC_ARGS)
 if(ParaView_BUILD_DOCUMENTATION)
@@ -464,6 +467,7 @@ ExternalProject_Add(${proj}
     # Boost
     -DVTK_USE_BOOST:BOOL=ON
     -DBoost_INCLUDE_DIR:PATH=${Boost_INCLUDE_DIR}
+    -DBOOST_LIBRARYDIR:PATH=${BOOST_LIBRARYDIR}
     # png
     ${PNG_ARGS}
     # Python

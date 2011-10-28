@@ -2,6 +2,7 @@
 
 set(boost_source  "${CMAKE_CURRENT_BINARY_DIR}/Boost")
 set(boost_binary  "${CMAKE_CURRENT_BINARY_DIR}/Boost-build")
+set(boost_install  "${CMAKE_CURRENT_BINARY_DIR}")
 
 if(MSVC)
   set(boost_lib_args
@@ -34,13 +35,19 @@ ExternalProject_Add(Boost
     -DBUILD_EXAMPLES:BOOL=OFF
     -DBUILD_TESTING:BOOL=OFF
     -DBUILD_VERSIONED:BOOL=OFF
-    -DINSTALL_VERSIONED:BOOL=OFF
+    -DINSTALL_VERSIONED:BOOL=ON
+    -DWINMANGLE_LIBNAMES:BOOL=ON
     -DWITH_MPI:BOOL=OFF
     -DWITH_PYTHON:BOOL=OFF
+    -DCMAKE_INSTALL_PREFIX:PATH=${boost_install}
     ${Boost_EXTRA_ARGS}
-  INSTALL_COMMAND ""
+  )
+
+  ExternalProject_Add_Step(Boost InstallUUIDInclude
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${boost_source}/src/uuid/include/boost/uuid ${boost_install}/include/boost/uuid
+    DEPENDEES install
   )
 
 # These variables are used to find Boost by other projects
-set(Boost_INCLUDE_DIR "${boost_source}" CACHE PATH "" FORCE)
-set(BOOST_LIBRARYDIR "${boost_binary}/lib" CACHE PATH "" FORCE)
+set(Boost_INCLUDE_DIR "${boost_install}/include" CACHE PATH "" FORCE)
+set(BOOST_LIBRARYDIR "${boost_install}/lib" CACHE PATH "" FORCE)
