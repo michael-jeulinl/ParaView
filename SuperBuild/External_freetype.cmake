@@ -1,7 +1,7 @@
 
 # The freetype external project for ParaView
 set(freetype_source "${CMAKE_CURRENT_BINARY_DIR}/freetype")
-set(freetype_install "${CMAKE_CURRENT_BINARY_DIR}")
+set(freetype_install "${CMAKE_CURRENT_BINARY_DIR}freetype-install")
 
 # If Windows we use CMake otherwise ./configure
 if(WIN32)

@@ -1,7 +1,7 @@
 
 # The SZIP external project for ParaView
 set(SZIP_source "${CMAKE_CURRENT_BINARY_DIR}/SZIP")
-set(SZIP_install "${CMAKE_CURRENT_BINARY_DIR}")
+set(SZIP_install "${CMAKE_CURRENT_BINARY_DIR}/install")
 
 set(SZIP_binary "${CMAKE_CURRENT_BINARY_DIR}/SZIP-build")
 
