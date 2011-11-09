@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    pqObjectPanel.cxx
+   Module:    pqApplyPropertiesManager.cxx
 
    Copyright (c) 2005-2008 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -30,58 +30,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
 
-// this include
-#include "pqObjectPanel.h"
+#include "pqApplyPropertiesManager.h"
 
-// ParaView includes
-#include "pqProxy.h"
+#include "pqApplicationCore.h"
+#include "pqUndoStack.h"
+#include "vtkTimerLog.h"
+
+#include <QDebug>
 
 //-----------------------------------------------------------------------------
-pqObjectPanel::pqObjectPanel(pqProxy* object_proxy, QWidget* p) :
-  pqProxyPanel(object_proxy->getProxy(), p), ReferenceProxy(object_proxy)
+pqApplyPropertiesManager::pqApplyPropertiesManager(QObject *parent)
+  : QObject(parent)
+{
+  pqApplicationCore::instance()->registerManager("APPLY_PROPERTIES", this);
+}
+
+//-----------------------------------------------------------------------------
+pqApplyPropertiesManager::~pqApplyPropertiesManager()
 {
 }
 
 //-----------------------------------------------------------------------------
-pqObjectPanel::~pqObjectPanel()
+void pqApplyPropertiesManager::applyProperties()
 {
+  BEGIN_UNDO_SET("Apply");
+  vtkTimerLog::MarkStartEvent("Apply");
+
+  emit this->preApply();
+  emit this->apply();
+  emit this->postApply();
+
+  END_UNDO_SET();
+  vtkTimerLog::MarkEndEvent("Apply");
+
+  // Essential to render all views.
+  pqApplicationCore::instance()->render();
+
+  emit this->applyStateChanged(false);
+  emit this->resetStateChanged(false);
 }
-
-//-----------------------------------------------------------------------------
-pqProxy* pqObjectPanel::referenceProxy() const
-{
-  return this->ReferenceProxy;
-}
-
-//-----------------------------------------------------------------------------
-void pqObjectPanel::accept()
-{
-  pqProxyPanel::accept();
-
-  if(this->ReferenceProxy)
-    {
-    this->ReferenceProxy->setModifiedState(pqProxy::UNMODIFIED);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqObjectPanel::reset()
-{
-  pqProxyPanel::reset();
-  if (this->ReferenceProxy && this->ReferenceProxy->modifiedState() != pqProxy::UNINITIALIZED)
-    {
-    this->ReferenceProxy->setModifiedState(pqProxy::UNMODIFIED);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqObjectPanel::setModified()
-{
-  // don't change from UNINITIALIZED to MODIFIED
-  if(this->ReferenceProxy && this->ReferenceProxy->modifiedState() != pqProxy::UNINITIALIZED)
-    {
-    this->ReferenceProxy->setModifiedState(pqProxy::MODIFIED);
-    pqProxyPanel::setModified();
-    }
-}
-

@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    pqObjectPanel.cxx
+   Module:    pqSummaryPanelInterface.cxx
 
    Copyright (c) 2005-2008 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -30,58 +30,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
 
-// this include
-#include "pqObjectPanel.h"
+#include "pqSummaryPanelInterface.h"
 
-// ParaView includes
-#include "pqProxy.h"
+#include <QDebug>
 
 //-----------------------------------------------------------------------------
-pqObjectPanel::pqObjectPanel(pqProxy* object_proxy, QWidget* p) :
-  pqProxyPanel(object_proxy->getProxy(), p), ReferenceProxy(object_proxy)
+pqSummaryPanelInterface::~pqSummaryPanelInterface()
 {
 }
 
 //-----------------------------------------------------------------------------
-pqObjectPanel::~pqObjectPanel()
+pqObjectPanel* pqSummaryPanelInterface::createPropertiesPanel(pqProxy *proxy) const
 {
+  Q_UNUSED(proxy);
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
-pqProxy* pqObjectPanel::referenceProxy() const
+QWidget* pqSummaryPanelInterface::createDisplayPanel(pqRepresentation *representation) const
 {
-  return this->ReferenceProxy;
+  Q_UNUSED(representation);
+
+  return 0;
 }
-
-//-----------------------------------------------------------------------------
-void pqObjectPanel::accept()
-{
-  pqProxyPanel::accept();
-
-  if(this->ReferenceProxy)
-    {
-    this->ReferenceProxy->setModifiedState(pqProxy::UNMODIFIED);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqObjectPanel::reset()
-{
-  pqProxyPanel::reset();
-  if (this->ReferenceProxy && this->ReferenceProxy->modifiedState() != pqProxy::UNINITIALIZED)
-    {
-    this->ReferenceProxy->setModifiedState(pqProxy::UNMODIFIED);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqObjectPanel::setModified()
-{
-  // don't change from UNINITIALIZED to MODIFIED
-  if(this->ReferenceProxy && this->ReferenceProxy->modifiedState() != pqProxy::UNINITIALIZED)
-    {
-    this->ReferenceProxy->setModifiedState(pqProxy::MODIFIED);
-    pqProxyPanel::setModified();
-    }
-}
-
